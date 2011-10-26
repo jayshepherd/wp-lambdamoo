@@ -30,6 +30,7 @@
 #include "storage.h"
 #include "structures.h"
 #include "utils.h"
+#include "list.h"
 
 static int
 parse_number(const char *str, int *result, int try_floating_point)
@@ -548,6 +549,66 @@ MATH_FUNC(floor)
 }
 
 static package
+bf_s2r(Var arglist, Byte next, void *vdata, Objid progr)
+{
+    double theta, phi, r;
+    double d;
+
+    theta = *arglist.v.list[1].v.fnum;
+    phi = *arglist.v.list[2].v.fnum;
+    r = *arglist.v.list[3].v.fnum;
+
+    d = theta + phi + r;
+
+    return make_var_pack(new_float(d));
+}
+
+static package
+bf_r2s(Var arglist, Byte next, void *vdata, Objid progr)
+{
+    double theta, phi, r;
+    double x, y, z;
+		Var ans;
+
+    x = arglist.v.list[1].v.num;
+    y = arglist.v.list[2].v.num;
+    z = arglist.v.list[3].v.num;
+
+		r = sqrt((x*x) + (y*y) + (z*z));
+    theta = acos(z/r) * ( 180.0 / 3.141592653589793 );
+    phi = atan2(y, x) * ( 180.0 / 3.141592653589793 );
+
+    ans = new_list(3);
+
+    ans.v.list[1].type = TYPE_INT;
+    ans.v.list[2].type = TYPE_INT;
+    ans.v.list[3].type = TYPE_INT;
+
+    ans.v.list[1].v.num = theta * 100;
+    ans.v.list[2].v.num = phi * 100;
+    ans.v.list[3].v.num = r;
+
+/*
+	function convertCartesianToSpherical(cartesian) {
+	    var r = Math.sqrt(cartesian.X* cartesian.X + cartesian.Y* cartesian.Y+ cartesian.Z* cartesian.Z);
+	    var lat = RadtoDeg(Math.asin(cartesian.Z/r));
+	    var lon = RadtoDeg(Math.atan2(cartesian.Y, cartesian.X));
+	    return new VELatLong(lat,lon);
+	}
+	
+	function DegtoRad(x){
+	 return x*Math.PI/180;
+	}
+	
+	function RadtoDeg(x){
+	 return x*180/Math.PI;
+	}
+*/
+
+    return make_var_pack(ans);
+}
+
+static package
 bf_atan(Var arglist, Byte next, void *vdata, Objid progr)
 {
     double d, dd;
@@ -701,6 +762,7 @@ register_numbers(void)
     register_function("ceil", 1, 1, bf_ceil, TYPE_FLOAT);
     register_function("floor", 1, 1, bf_floor, TYPE_FLOAT);
     register_function("trunc", 1, 1, bf_trunc, TYPE_FLOAT);
+    register_function("r2s", 3, 3, bf_r2s, TYPE_INT, TYPE_INT, TYPE_INT);
 }
 
 char rcsid_numbers[] = "$Id$";
